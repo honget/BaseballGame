@@ -1,133 +1,151 @@
 package com.example.baseballgame;
 
+
 import android.databinding.DataBindingUtil;
-import android.support.v7.app.AppCompatActivity;
+import android.os.Handler;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 import com.example.baseballgame.adapters.ChatAdapter;
 import com.example.baseballgame.databinding.ActivityMainBinding;
 import com.example.baseballgame.datas.Chat;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends BaseActivity {
 
-    int[] computerExamList = new int[3];
-
     ActivityMainBinding act;
 
-    List<Chat> chatList;
+    int[] computerExamArray = new int[3];
 
+    List<Chat> chatList = new ArrayList<>();
     ChatAdapter mChatAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
+        bindViews();
+        setupEvents();
         setValues();
-        setBinding();
-        setEvnet();
     }
 
-    void chkNum(int chkNum){
+    @Override
+    public void setupEvents() {
+        act.inputBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
-        int[] chkNums = new int[]{ (int)chkNum / 100, (int)chkNum / 10 % 10, (int)chkNum % 10 };
+                chatList.add(new Chat(true, act.userInputEdt.getText().toString()));
+                mChatAdapter.notifyDataSetChanged();
+                act.messageListView.smoothScrollToPosition(chatList.size()-1);
+                checkStrikeAndBalls();
+            }
+        });
+    }
 
-        int s = 0;
-        int b = 0;
+    void checkStrikeAndBalls() {
 
-        for (int ei = 0 ; ei <= computerExamList.length  ; ei++ ){
+        int[] userInputArray = new int[3];
+        int number = Integer.parseInt(act.userInputEdt.getText().toString());
 
-            int eNum = computerExamList[ei];
+        userInputArray[0] = number / 100;
+        userInputArray[1] = number / 10 % 10;
+        userInputArray[2] = number % 10;
 
-            for (int ci = 0 ; ci <= computerExamList.length  ; ci++ ){
-                if(eNum == computerExamList[ci]){
-                    if(ei == ci){
-                        s++;
-                    }else{
-                        b++;
+        int strikeCount = 0;
+        int ballCount = 0;
+
+        for (int i=0 ; i < 3 ; i++) {
+            for (int j=0 ; j < 3 ; j++) {
+
+                if (userInputArray[i] == computerExamArray[j]) {
+                    if (i == j) {
+                        strikeCount++;
+                    }
+                    else {
+                        ballCount++;
                     }
                 }
             }
         }
 
-        if(s == 3){
-            //Toast.makeText(this, "정답입니다. 축하합니다.", Toast.LENGTH_SHORT).show();
-            chatList.add(new Chat(false, "정답입니다. 축하합니다." ));
+        final int strikeFinalCount = strikeCount;
+        final int ballFinalCount = ballCount;
 
-        }else{
-            Toast.makeText(this, String.format("%dS, %sB ", s, b), Toast.LENGTH_SHORT).show();
-            chatList.add(new Chat(false,String.format("%dS, %sB ", s, b) ));
+        if (strikeCount == 3) {
+//            Toast.makeText(mContext, "정답입니다! 축하합니다!", Toast.LENGTH_SHORT).show();
+            chatList.add(new Chat(false, "정답입니다! 축하합니다!"));
+
+        }
+        else {
+//            Toast.makeText(mContext, String.format("%dS, %dB 입니다.", strikeCount, ballCount), Toast.LENGTH_SHORT).show();
+            chatList.add(new Chat(false, String.format("%dS, %dB 입니다.", strikeFinalCount, ballFinalCount)));
         }
 
-        mChatAdapter.notifyDataSetChanged();
-        act.messageListView.smoothScrollToPosition(chatList.size() - 1);
-    }
+        act.userInputEdt.setText("");
 
-    void makeExam(){
-        int radomNumber = (int)Math.random() * 899 + 100;
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
 
-        int[] tmpNum = new int[3];
+                mChatAdapter.notifyDataSetChanged();
+                act.messageListView.smoothScrollToPosition(chatList.size()-1);
 
-        tmpNum[0] = radomNumber/ 100;
-        tmpNum[1] = radomNumber/ 10 % 10;
-        tmpNum[2] = radomNumber % 10;
-
-//        boolean isDupOlk = true;
-        //조건
-
-//        boolean isDupOlk = true;
-
-        computerExamList[0] = makeRandom();
-        computerExamList[1] = makeRandom();
-        computerExamList[2] = makeRandom();
-
-        Log.d("정답", computerExamList.toString());
-    }
-
-    public int makeRandom(){
-
-        int tmpNum = (int)(Math.random() * 89 + 10) /10;
-        boolean isPass = true;
-        for (int examNum : computerExamList){
-            if(tmpNum == examNum){
-                isPass = false;
             }
-        }
-        if(isPass){
-            return tmpNum;
-        }else{
-            return makeRandom();
-        }
+        }, 1000);
     }
 
     @Override
     public void setValues() {
-
         makeExam();
 
-        mChatAdapter = new ChatAdapter(this, chatList);
+        mChatAdapter = new ChatAdapter(mContext, chatList);
         act.messageListView.setAdapter(mChatAdapter);
 
     }
 
-    @Override
-    public void setBinding() {
-        act = DataBindingUtil.setContentView(this, R.layout.activity_main);
+    void makeExam() {
+
+        while (true) {
+            int randomNumber = (int) (Math.random() * 899 + 100); // Ex. 747
+
+            int[] tempNumber = new int[3];
+
+            tempNumber[0] = randomNumber / 100;
+            tempNumber[1] = randomNumber / 10 % 10;
+            tempNumber[2] = randomNumber % 10;
+
+            boolean isDuplOk = true;
+            if (tempNumber[0] == tempNumber[1] || tempNumber[1] == tempNumber[2] || tempNumber[0] == tempNumber[2]) {
+                isDuplOk = false;
+            }
+
+            boolean isZeroOk = true;
+            if (tempNumber[0] == 0 || tempNumber[1] == 0 || tempNumber[2] == 0) {
+                isZeroOk = false;
+            }
+
+            if (isDuplOk && isZeroOk) {
+                computerExamArray[0] = tempNumber[0];
+                computerExamArray[1] = tempNumber[1];
+                computerExamArray[2] = tempNumber[2];
+
+                Log.d("정답 숫자", randomNumber+" 입니다.");
+
+                break;
+            }
+
+        }
+
+
     }
 
+
     @Override
-    public void setEvnet() {
-        act.inputBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                chatList.add(new Chat(true,act.inputEdt.getText().toString() ));
-                chkNum(Integer.getInteger(act.inputEdt.getText().toString()));
-            }
-        });
+    public void bindViews() {
+
+        act = DataBindingUtil.setContentView(this, R.layout.activity_main);
     }
 }
