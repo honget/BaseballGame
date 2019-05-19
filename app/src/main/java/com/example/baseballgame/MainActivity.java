@@ -76,7 +76,7 @@ public class MainActivity extends BaseActivity {
 
         if (strikeCount == 3) {
 //            Toast.makeText(mContext, "정답입니다! 축하합니다!", Toast.LENGTH_SHORT).show();
-            chatList.add(new Chat(false, "정답입니다! 축하합니다!"));
+            chatList.add(new Chat(false,  String.format("정답입니다! 축하합니다! %s 번에 마추었습니다.", (int)(chatList.size()/2  + 1) ) ) );
 
         }
         else {
